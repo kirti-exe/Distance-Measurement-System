@@ -4,7 +4,7 @@ import java.sql.PreparedStatement;
 
 public class DatabaseManager {
 
-    static String url = "jdbc:mysql://localhost:3306/distance_system";
+    static String url = "jdbc:mysql://localhost:3306/distance_system?useSSL=false";
     static String user = "root";
     static String password = "root123"; // your mysql password
 

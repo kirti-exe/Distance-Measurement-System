@@ -11,6 +11,9 @@ class ArduinoCOM3Reader {
 
     public static void main(String[] args) {
 
+        // Graph Generator
+        GraphGenerator.startGraph();
+
         Random random = new Random();
 
         SerialPort port = null;
@@ -70,6 +73,8 @@ class ArduinoCOM3Reader {
 //--------------------------------------------------DISPLAY DISTANCE--------------------------------------------------------------
                 System.out.println("Distance: " + distance + " cm");
 
+                // Upgrade graph with data
+                GraphGenerator.update(distance);
 //--------------------------------------------------ANALYSIS LOGIC------------------------------------------------------
                 String status;
 
