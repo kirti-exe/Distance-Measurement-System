@@ -1,19 +1,30 @@
 import org.jfree.chart.ChartPanel;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 public class Dashboard {
     static JLabel distanceLabel;
     static JLabel statusLabel;
 
+    static DefaultTableModel tableModel;
+
     public static void start(ChartPanel chartPanel){
 
         JFrame frame = new JFrame("Distance Monitoring System");
 
-        frame.setSize(900,600);
+        frame.setSize(900,700);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
+
+        //------------------------------------------------
+        // TOP PANEL
+        //------------------------------------------------
 
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new GridLayout(2,1));
@@ -27,9 +38,28 @@ public class Dashboard {
         topPanel.add(distanceLabel);
         topPanel.add(statusLabel);
 
+        //------------------------------------------------
+        // TABLE
+        //------------------------------------------------
+
+        String[] columns = {"Time", "Distance (cm)", "Status"};
+
+        tableModel = new DefaultTableModel(columns, 0);
+
+        JTable table = new JTable(tableModel);
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setPreferredSize(new Dimension(800, 200));
+
+        //------------------------------------------------
+        // TABLE
+        //------------------------------------------------
+
         frame.add(topPanel, BorderLayout.NORTH);
         frame.add(chartPanel, BorderLayout.CENTER);
+        frame.add(scrollPane, BorderLayout.SOUTH);
 
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
@@ -46,6 +76,46 @@ public class Dashboard {
         }
         else{
             statusLabel.setForeground(Color.RED);
+        }
+
+        refreshTable();
+    }
+
+    //------------------------------------------------
+    // LOAD DATA FROM MYSQL
+    //------------------------------------------------
+    public static void refreshTable(){
+
+        try{
+
+            Connection conn = DriverManager.getConnection(
+                "jdbc:mysql://localhost:3306/distance_system?useSSL=false",
+                "root",
+                "root123"
+            );
+
+            Statement stmt = conn.createStatement();
+
+            ResultSet rs = stmt.executeQuery(
+                    "SELECT `timestamp`, distance, status FROM distance_record ORDER BY id DESC LIMIT 10"
+            );
+
+            tableModel.setRowCount(0);
+
+            while(rs.next()){
+
+                Object[] row = {
+                        rs.getString("timestamp"),
+                        rs.getDouble("distance"),
+                        rs.getString("status")
+                };
+
+                tableModel.addRow(row);
+            }
+
+            conn.close();
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 }

@@ -105,6 +105,7 @@ class ArduinoCOM3Reader {
                 // (Will update live dashboard)
                 GraphGenerator.update(distance);
                 Dashboard.update(distance, status);
+                DatabaseManager.save(distance, status);
 
                 System.out.println("--------------------------------");
             }catch(Exception e){
@@ -113,3 +114,9 @@ class ArduinoCOM3Reader {
         }
     }
 }
+
+/*  WHAT TO ADD NEXT
+    1. Real Time Alert System
+    2. Distance Threshold
+    3. Stop/ Start Monitoring System
+ */
