@@ -3,16 +3,13 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
-
-import javax.swing.JFrame;
 
 public class GraphGenerator {
 
     static  XYSeries series = new XYSeries("Distance");
+    static ChartPanel chartPanel;
 
-    public static  void startGraph(){
+    public static ChartPanel startGraph(){
 
         XYSeriesCollection dataset = new XYSeriesCollection(series);
 
@@ -23,12 +20,14 @@ public class GraphGenerator {
                 dataset
         );
 
-        ChartPanel panel = new ChartPanel(chart);
+        chartPanel = new ChartPanel(chart);
 
-        JFrame frame = new JFrame("Distance Graph");
-        frame.setSize(800, 600);
-        frame.setContentPane(panel);
-        frame.setVisible(true);
+        return chartPanel;
+
+//        JFrame frame = new JFrame("Distance Graph");
+//        frame.setSize(800, 600);
+//        frame.setContentPane(chartPanel);
+//        frame.setVisible(true);
     }
 
     public static void update(double distance){

@@ -1,4 +1,5 @@
 import com.fazecast.jSerialComm.SerialPort;
+import org.jfree.chart.ChartPanel;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -19,7 +20,7 @@ class ArduinoCOM3Reader {
         SerialPort port = null;
         BufferedReader reader = null;
 
-//----------------------------------------SERIAL CONNECTION (WHILE USING ARDUINO)----------------------------------------
+//----------------------------------------SERIAL CONNECTION (WHILE USING ARDUINO)---------------------------------------
         if(!SIMULATION_MODE){
             port = SerialPort.getCommPort("COM3");
 
@@ -44,6 +45,9 @@ class ArduinoCOM3Reader {
         }
 
 //----------------------------------------------------MAIN LOOP---------------------------------------------------------
+        // (Will start distance vs time graph)
+        ChartPanel panel = GraphGenerator.startGraph();
+        Dashboard.start(panel);
 
         while(true){
 
@@ -56,7 +60,7 @@ class ArduinoCOM3Reader {
                     // Simulation sensor data (0 - 100)
                     distance = random.nextInt(100);
 
-                    Thread.sleep(4000);
+                    Thread.sleep(2000);
 
                 }else{
 
@@ -70,7 +74,7 @@ class ArduinoCOM3Reader {
 
                 }
 
-//--------------------------------------------------DISPLAY DISTANCE--------------------------------------------------------------
+//--------------------------------------------------DISPLAY DISTANCE----------------------------------------------------
                 System.out.println("Distance: " + distance + " cm");
 
                 // Upgrade graph with data
@@ -91,17 +95,16 @@ class ArduinoCOM3Reader {
                     System.out.println("Safe Distance");
                 }
 
-//--------------------------------------------------DATABASE STORAGE------------------------------------------------------
-                 DatabaseManager.save(distance, status);
+//--------------------------------------------------DATABASE STORAGE----------------------------------------------------
                 // (Will store distance, status timestamp)
+                DatabaseManager.save(distance, status);
 
-//--------------------------------------------------GRAPH GENERATION------------------------------------------------------
-                // GraphGenerator.update(distance);
-                // (Will update distance vs time graph)
+//--------------------------------------------------GRAPH GENERATION----------------------------------------------------
 
-//-----------------------------------------------------GUI UPDATE------------------------------------------------------
-                // Dashboard.update(distance, status)
+//-----------------------------------------------------GUI UPDATE-------------------------------------------------------
                 // (Will update live dashboard)
+                GraphGenerator.update(distance);
+                Dashboard.update(distance, status);
 
                 System.out.println("--------------------------------");
             }catch(Exception e){
