@@ -47,6 +47,7 @@ public class Dashboard {
         tableModel = new DefaultTableModel(columns, 0);
 
         JTable table = new JTable(tableModel);
+        table.setDefaultRenderer(Object.class, new StatusColorRenderer());
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setPreferredSize(new Dimension(800, 200));
@@ -60,6 +61,23 @@ public class Dashboard {
         frame.add(scrollPane, BorderLayout.SOUTH);
 
         frame.setLocationRelativeTo(null);
+
+        //------------------------------------------------
+        // BUTTON PANEL
+        //------------------------------------------------
+        JPanel buttonPanel = new JPanel();
+
+        JButton startButton = new JButton("Start Monitoring");
+        JButton stopButton = new JButton("Stop Monitoring");
+
+        buttonPanel.add(startButton);
+        buttonPanel.add(stopButton);
+
+        frame.add(buttonPanel, BorderLayout.WEST);
+
+        startButton.addActionListener(e -> startMonitoring());
+        stopButton.addActionListener(e -> stopMonitoring());
+
         frame.setVisible(true);
     }
 
@@ -88,14 +106,8 @@ public class Dashboard {
 
         try{
 
-            Connection conn = DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/distance_system?useSSL=false",
-                "root",
-                "root123"
-            );
-
+            Connection conn = DatabaseConnection.getConnection();
             Statement stmt = conn.createStatement();
-
             ResultSet rs = stmt.executeQuery(
                     "SELECT `timestamp`, distance, status FROM distance_record ORDER BY id DESC LIMIT 10"
             );
@@ -103,13 +115,11 @@ public class Dashboard {
             tableModel.setRowCount(0);
 
             while(rs.next()){
-
                 Object[] row = {
                         rs.getString("timestamp"),
                         rs.getDouble("distance"),
                         rs.getString("status")
                 };
-
                 tableModel.addRow(row);
             }
 
@@ -117,5 +127,16 @@ public class Dashboard {
         }catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    //------------------------------------------------
+    // START / STOP METHODS
+    //------------------------------------------------
+    public static void startMonitoring(){
+        ArduinoCOM3Reader.monitoring = true;
+    }
+
+    public static void stopMonitoring(){
+        ArduinoCOM3Reader.monitoring = false;
     }
 }

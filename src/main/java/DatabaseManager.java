@@ -12,7 +12,7 @@ public class DatabaseManager {
 
         try {
 
-            Connection conn = DriverManager.getConnection(url, user, password);
+            Connection conn = DatabaseConnection.getConnection();
 
             String sql = "INSERT INTO distance_record(distance, status) VALUES (?, ?)";
 

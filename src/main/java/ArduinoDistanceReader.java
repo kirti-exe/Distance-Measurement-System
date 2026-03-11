@@ -10,6 +10,9 @@ class ArduinoCOM3Reader {
     //Toggle to switch modes
     static boolean SIMULATION_MODE = true;
 
+    //Control whether the system reads sensor data
+    static boolean monitoring = true;
+
     public static void main(String[] args) {
 
         // Graph Generator
@@ -54,24 +57,25 @@ class ArduinoCOM3Reader {
             try{
                 double distance;
 
+                if(!monitoring){
+                    Thread.sleep(500);
+                    continue;
+                }
+
 //---------------------------------------------------GET DISTANCE-------------------------------------------------------
                 if(SIMULATION_MODE){
 
                     // Simulation sensor data (0 - 100)
                     distance = random.nextInt(100);
-
                     Thread.sleep(2000);
 
                 }else{
 
                     String line = reader.readLine();
-
                     if(line == null || line.isEmpty()){
                         continue;
                     }
-
                     distance = Double.parseDouble(line.trim());
-
                 }
 
 //--------------------------------------------------DISPLAY DISTANCE----------------------------------------------------
