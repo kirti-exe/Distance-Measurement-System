@@ -7,12 +7,15 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.awt.Toolkit;
 
 public class Dashboard {
     static JLabel distanceLabel;
     static JLabel statusLabel;
 
     static DefaultTableModel tableModel;
+
+    static boolean alarmActive = false;
 
     public static void start(ChartPanel chartPanel){
 
@@ -23,44 +26,20 @@ public class Dashboard {
         frame.setLayout(new BorderLayout());
 
         //------------------------------------------------
-        // TOP PANEL
+        // STATUS PANEL
         //------------------------------------------------
 
-        JPanel topPanel = new JPanel();
-        topPanel.setLayout(new GridLayout(2,1));
+        JPanel statusPanel = new JPanel( new GridLayout(2,1));
 
         distanceLabel = new JLabel("Distance: -- cm", SwingConstants.CENTER);
         distanceLabel.setFont(new Font("Arial", Font.BOLD, 28));
 
         statusLabel = new JLabel("Status: --", SwingConstants.CENTER);
-        statusLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        statusLabel.setFont(new Font("Arial", Font.BOLD, 28));
 
-        topPanel.add(distanceLabel);
-        topPanel.add(statusLabel);
+        statusPanel.add(distanceLabel);
+        statusPanel.add(statusLabel);
 
-        //------------------------------------------------
-        // TABLE
-        //------------------------------------------------
-
-        String[] columns = {"Time", "Distance (cm)", "Status"};
-
-        tableModel = new DefaultTableModel(columns, 0);
-
-        JTable table = new JTable(tableModel);
-        table.setDefaultRenderer(Object.class, new StatusColorRenderer());
-
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setPreferredSize(new Dimension(800, 200));
-
-        //------------------------------------------------
-        // TABLE
-        //------------------------------------------------
-
-        frame.add(topPanel, BorderLayout.NORTH);
-        frame.add(chartPanel, BorderLayout.CENTER);
-        frame.add(scrollPane, BorderLayout.SOUTH);
-
-        frame.setLocationRelativeTo(null);
 
         //------------------------------------------------
         // BUTTON PANEL
@@ -73,27 +52,76 @@ public class Dashboard {
         buttonPanel.add(startButton);
         buttonPanel.add(stopButton);
 
-        frame.add(buttonPanel, BorderLayout.WEST);
-
         startButton.addActionListener(e -> startMonitoring());
         stopButton.addActionListener(e -> stopMonitoring());
 
         frame.setVisible(true);
+
+        //------------------------------------------------
+        // TOP CONTAINER
+        //------------------------------------------------
+        JPanel topContainer = new JPanel(new BorderLayout());
+
+        topContainer.add(statusPanel, BorderLayout.CENTER);
+        topContainer.add(buttonPanel, BorderLayout.SOUTH);
+
+        //------------------------------------------------
+        // TABLE
+        //------------------------------------------------
+
+        String[] columns = {"Time", "Distance (cm)", "Status"};
+
+        tableModel = new DefaultTableModel(columns, 0);
+
+        JTable table = new JTable(tableModel);
+        table.setDefaultRenderer(Object.class, new StatusColorRenderer());
+
+        table.setRowHeight(25);
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setPreferredSize(new Dimension(800, 200));
+
+        //------------------------------------------------
+        // TABLE
+        //------------------------------------------------
+
+        frame.add(topContainer, BorderLayout.NORTH);
+        frame.add(chartPanel, BorderLayout.CENTER);
+        frame.add(scrollPane, BorderLayout.SOUTH);
+
+        frame.setLocationRelativeTo(null);
+
     }
+
 
     public static void update(double distance, String status){
 
         distanceLabel.setText("Distance: " + distance + " cm");
         statusLabel.setText("Status: " + status);
 
-        if(status.equalsIgnoreCase("safe")){
+        if(status.equalsIgnoreCase("SAFE")){
             statusLabel.setForeground(Color.GREEN);
+            alarmActive = false;
         }
-        else if(status.equalsIgnoreCase("warning")){
+        else if(status.equalsIgnoreCase("WARNING")){
             statusLabel.setForeground(Color.ORANGE);
+            alarmActive = false;
         }
-        else{
+        else if (status.equalsIgnoreCase("CRITICAL")){
             statusLabel.setForeground(Color.RED);
+            if(!alarmActive){
+                alarmActive = true;
+
+                // Sound alarm
+                Toolkit.getDefaultToolkit().beep();
+
+                // Popup alert
+                JOptionPane.showMessageDialog(null,
+                        "⚠ CRITICAL OBJECT DETECTED!",
+                        "ALERT",
+                        JOptionPane.WARNING_MESSAGE);
+            }
         }
 
         refreshTable();
