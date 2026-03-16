@@ -110,6 +110,9 @@ class ArduinoCOM3Reader {
                 GraphGenerator.update(distance);
                 Dashboard.update(distance, status);
                 DatabaseManager.save(distance, status);
+                // DigitalDistanceDisplay.update(distance);
+                RadarPanel.update(distance);
+                Dashboard.radarPanel.repaint();
 
                 System.out.println("--------------------------------");
             }catch(Exception e){

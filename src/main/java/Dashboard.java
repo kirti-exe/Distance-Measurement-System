@@ -12,14 +12,16 @@ import java.awt.Toolkit;
 public class Dashboard {
     static JLabel distanceLabel;
     static JLabel statusLabel;
-
     static DefaultTableModel tableModel;
-
     static boolean alarmActive = false;
+    // Radar Panel
+    static RadarPanel radarPanel;
 
     public static void start(ChartPanel chartPanel){
 
         JFrame frame = new JFrame("Distance Monitoring System");
+
+        radarPanel = new RadarPanel();
 
         frame.setSize(900,700);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -65,6 +67,10 @@ public class Dashboard {
         topContainer.add(statusPanel, BorderLayout.CENTER);
         topContainer.add(buttonPanel, BorderLayout.SOUTH);
 
+
+        //JPanel digitalPanel = DigitalDistanceDisplay.createDisplay();
+
+
         //------------------------------------------------
         // TABLE
         //------------------------------------------------
@@ -83,12 +89,23 @@ public class Dashboard {
         scrollPane.setPreferredSize(new Dimension(800, 200));
 
         //------------------------------------------------
-        // TABLE
+        // RADAR
+        //------------------------------------------------
+        JPanel centerPanel = new JPanel(new GridLayout(1,2));
+
+        centerPanel.add(chartPanel);
+        centerPanel.add(radarPanel);
+
+        frame.add(centerPanel, BorderLayout.CENTER);
+
+        //------------------------------------------------
+        // LAYOUT
         //------------------------------------------------
 
         frame.add(topContainer, BorderLayout.NORTH);
         frame.add(chartPanel, BorderLayout.CENTER);
         frame.add(scrollPane, BorderLayout.SOUTH);
+//        frame.add(digitalPanel, BorderLayout.NORTH);
 
         frame.setLocationRelativeTo(null);
 
