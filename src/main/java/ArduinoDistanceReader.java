@@ -51,6 +51,7 @@ class ArduinoCOM3Reader {
         // (Will start distance vs time graph)
         ChartPanel panel = GraphGenerator.startGraph();
         Dashboard.start(panel);
+        CleanDashboard.launch();
 
         while(true){
 
@@ -109,6 +110,8 @@ class ArduinoCOM3Reader {
                 // (Will update live dashboard)
                 GraphGenerator.update(distance);
                 Dashboard.update(distance, status);
+                CleanDashboard.update(distance,status);
+
                 DatabaseManager.save(distance, status);
                 // DigitalDistanceDisplay.update(distance);
                 RadarPanel.update(distance);
