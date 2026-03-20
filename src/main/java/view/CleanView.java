@@ -54,6 +54,7 @@ public class CleanView implements DistanceModel.ReadingListener {
     private final XYSeries          series = new XYSeries("Distance");
     private final ChartPanel        chartPanel;
     private final JButton           toggleBtn;
+    private final JButton           settingsBtn;
     private int tick = 0;
 
     public CleanView(DistanceModel model) {
@@ -76,6 +77,8 @@ public class CleanView implements DistanceModel.ReadingListener {
         };
         chartPanel = buildChart();
         toggleBtn  = buildToggleBtn();
+        settingsBtn = buildSettingsBtn();
+
 
         frame = new JFrame("Distance Monitor — Clean View");
         frame.setSize(980, 620);
@@ -141,6 +144,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         right.setOpaque(false);
         applyStatusStyle(statusBadge, "SAFE");
         right.add(statusBadge);
+        right.add(settingsBtn);
         right.add(toggleBtn);
         header.add(right, BorderLayout.EAST);
         return header;
@@ -402,6 +406,22 @@ public class CleanView implements DistanceModel.ReadingListener {
                     new EmptyBorder(5, 14, 5, 14)));
             }
         });
+        return btn;
+    }
+
+    // ── Settings button ──────────────────────────────────────────────────────
+    private JButton buildSettingsBtn(){
+        JButton btn = new JButton("⚙ Settings");
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btn.setForeground(new Color(0x3B82F6));
+        btn.setBackground(new Color(0xEFF6FF));
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(0xBFDBFE), 1),
+                new EmptyBorder(5,14,5,14)));
+        btn.addActionListener((e ->
+                new SettingsView(frame, model).setVisible(true)));
         return btn;
     }
 

@@ -57,6 +57,11 @@ public class MainView implements DistanceModel.ReadingListener {
         buttonPanel.add(startBtn);
         buttonPanel.add(stopBtn);
 
+        JButton settingsBtn = new JButton("Settings");
+        settingsBtn.addActionListener(e ->
+                new SettingsView(frame,model).setVisible(true));
+        buttonPanel.add(settingsBtn);
+
         // ── Top container ──────────────────────────────────────────────────
         JPanel topContainer = new JPanel(new BorderLayout());
         topContainer.add(statusPanel, BorderLayout.CENTER);

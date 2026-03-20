@@ -18,10 +18,14 @@ public class DistanceModel {
     public interface ReadingListener {
         void onNewReading(DistanceReading reading);
     }
+    public interface ThresholdListener {
+        void onThresholdsChanged(double critical, double warning);
+    }
 
     // ── State ──────────────────────────────────────────────────────────────
     private final List<DistanceReading> history  = new ArrayList<>();
     private final List<ReadingListener> listeners = new ArrayList<>();
+    private final List<ThresholdListener> thresholdListeners = new ArrayList<>();
     private boolean monitoring = true;
 
     // ── Listener management ────────────────────────────────────────────────
@@ -93,5 +97,18 @@ public class DistanceModel {
 
     public int getSampleCount() {
         return history.size();
+    }
+
+    // -- Thresholds ----------------------------------
+    public void setThresholds(double critical, double warning){
+        AppConfig.CRITICAL_THRESHOLD = critical;
+        AppConfig.WARNING_THRESHOLD = warning;
+        for(ThresholdListener l : thresholdListeners){
+            l.onThresholdsChanged(critical, warning);
+        }
+    }
+
+    public void addThresholdListener(ThresholdListener listener) {
+        thresholdListeners.add(listener);
     }
 }
