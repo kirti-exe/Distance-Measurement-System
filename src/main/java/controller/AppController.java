@@ -57,6 +57,7 @@ public class AppController implements Runnable {
 
         while (running) {
             try {
+                System.out.println("Monitoring: " + model.isMonitoring());
                 if (!model.isMonitoring()) {
                     Thread.sleep(500);
                     continue;
@@ -95,9 +96,21 @@ public class AppController implements Runnable {
         port.setNumStopBits(SerialPort.ONE_STOP_BIT);
         port.setParity(SerialPort.NO_PARITY);
 
+        port.setComPortTimeouts(
+                SerialPort.TIMEOUT_READ_SEMI_BLOCKING,
+                1000,
+                0
+        );
+
         if (!port.openPort()) {
             System.out.println("❌ Failed to open " + AppConfig.SERIAL_PORT);
             return false;
+        }
+
+        try{
+            Thread.sleep(2000);
+        }catch(InterruptedException e){
+            e.printStackTrace();
         }
 
         System.out.println("✅ Connected to " + AppConfig.SERIAL_PORT);

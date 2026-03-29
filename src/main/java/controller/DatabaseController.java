@@ -13,10 +13,8 @@ import java.sql.Statement;
 /**
  * Handles all database operations.
  *
- * Fixes from original code:
- *  - Connection is never closed mid-session (was breaking the singleton).
- *  - save() is called exactly once per reading (was called twice before).
- *  - Implements ReadingListener so it auto-saves when model fires an update.
+ * Changes from previous version:
+ *  - Added getConnection() so UserAuth can reuse the same Connection.
  */
 public class DatabaseController implements DistanceModel.ReadingListener {
 
@@ -42,7 +40,10 @@ public class DatabaseController implements DistanceModel.ReadingListener {
         return connected;
     }
 
-    public boolean isConnected() { return connected; }
+    public boolean    isConnected()  { return connected; }
+
+    /** Exposes the live connection for reuse by UserAuth. */
+    public Connection getConnection() { return connection; }
 
     // ── ReadingListener — auto-save every new reading ──────────────────────
     @Override
@@ -59,7 +60,6 @@ public class DatabaseController implements DistanceModel.ReadingListener {
             stmt.setDouble(1, reading.getDistance());
             stmt.setString(2, reading.getStatus());
             stmt.executeUpdate();
-            // NOTE: Do NOT close connection here — it's reused across all saves
             System.out.println("✔ Data stored in MySQL");
         } catch (Exception e) {
             System.out.println("Database save error: " + e.getMessage());

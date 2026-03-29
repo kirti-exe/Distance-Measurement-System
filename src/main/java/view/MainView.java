@@ -3,6 +3,7 @@ package view;
 import model.AppConfig;
 import model.DistanceModel;
 import model.DistanceReading;
+import controller.UserAuth;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -26,10 +27,12 @@ public class MainView implements DistanceModel.ReadingListener {
     private final JLabel           statusLabel;
     private final DefaultTableModel tableModel;
     private final RadarView        radarView;
+    private final UserAuth         userAuth;
 
-    public MainView(DistanceModel model, GraphView graphView, RadarView radarView) {
+    public MainView(DistanceModel model, GraphView graphView, RadarView radarView, UserAuth userAuth) {
         this.model    = model;
         this.radarView = radarView;
+        this.userAuth = userAuth;
 
         frame = new JFrame("Distance Monitoring System");
         frame.setSize(900, 700);
@@ -59,7 +62,7 @@ public class MainView implements DistanceModel.ReadingListener {
 
         JButton settingsBtn = new JButton("Settings");
         settingsBtn.addActionListener(e ->
-                new SettingsView(frame,model).setVisible(true));
+                new SettingsView(frame,model,userAuth).setVisible(true));
         buttonPanel.add(settingsBtn);
 
         // ── Top container ──────────────────────────────────────────────────

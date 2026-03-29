@@ -1,9 +1,12 @@
 import com.formdev.flatlaf.FlatLightLaf;
 import controller.AppController;
+import controller.BeepController;
 import controller.DatabaseController;
+import controller.UserAuth;
 import model.DistanceModel;
 import view.CleanView;
 import view.GraphView;
+import view.LoginView;
 import view.MainView;
 import view.RadarView;
 
@@ -12,10 +15,12 @@ import view.RadarView;
  *
  * MVC wiring order:
  *  1. Create the Model
- *  2. Create all Views (register as listeners on the Model)
- *  3. Create Controllers (given the Model to drive)
- *  4. Show Views
- *  5. Start Controllers
+ *  2. Connect to DB
+ *  3. Show LoginView — gate CleanView behind authentication
+ *  4. Create all Views (register as listeners on the Model)
+ *  5. Create Controllers (given the Model to drive)
+ *  6. Show Views
+ *  7. Start Controllers
  */
 public class Main {
 
@@ -24,35 +29,64 @@ public class Main {
         // ── 1. Model ───────────────────────────────────────────────────────
         DistanceModel model = new DistanceModel();
 
-        // ── 2. Views (register on model) ───────────────────────────────────
-        GraphView graphView = new GraphView();
-        RadarView radarView = new RadarView();
-        MainView  mainView  = new MainView(model, graphView, radarView);
-        CleanView cleanView = new CleanView(model);
-
-        model.addListener(graphView);   // chart updates
-        model.addListener(radarView);   // radar updates
-        model.addListener(mainView);    // original dashboard updates
-        model.addListener(cleanView);   // clean dashboard updates
-
-        // ── 3. Controllers ─────────────────────────────────────────────────
+        // ── 2. Database (must connect before login check) ──────────────────
         DatabaseController dbController = new DatabaseController();
         dbController.connect();
-        model.addListener(dbController); // auto-saves every reading
+
+        // ── 3. Login gate for CleanView ────────────────────────────────────
+        //   LoginView is shown on the EDT; we block here until it closes.
+        UserAuth userAuth = new UserAuth(dbController);
+        final boolean[] loginOk = {false};
+
+        try {
+            javax.swing.SwingUtilities.invokeAndWait(() -> {
+                try { FlatLightLaf.setup(); } catch (Exception ignored) {}
+                LoginView login = new LoginView(userAuth);
+                loginOk[0] = login.showAndWait();
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (!loginOk[0]) {
+            // User closed the dialog without signing in — shut down cleanly
+            System.out.println("Login cancelled. Exiting.");
+            dbController.disconnect();
+            System.exit(0);
+        }
+
+        // ── 4. Views (register on model) ───────────────────────────────────
+        GraphView graphView = new GraphView();
+        RadarView radarView = new RadarView();
+        MainView  mainView  = new MainView(model, graphView, radarView, userAuth);
+        CleanView cleanView = new CleanView(model, userAuth);   // ← protected by login
+
+        model.addListener(graphView);
+        model.addListener(radarView);
+        model.addListener(mainView);
+        model.addListener(cleanView);
+
+        // ── 5. Controllers ─────────────────────────────────────────────────
+        BeepController beepController = new BeepController();
+        model.addListener(dbController);
+        model.addListener(beepController);
 
         AppController appController = new AppController(model, dbController);
 
-        // ── 4. Show views ──────────────────────────────────────────────────
+        // ── 6. Show views ──────────────────────────────────────────────────
         javax.swing.SwingUtilities.invokeLater(() -> {
-            try { FlatLightLaf.setup(); } catch (Exception ignored) {}
             mainView.show();
             cleanView.show();
         });
 
-        // ── 5. Start sensor loop ───────────────────────────────────────────
+        // ── 7. Start sensor loop ───────────────────────────────────────────
         appController.start();
+        beepController.start();
 
         // Graceful shutdown on exit
-        Runtime.getRuntime().addShutdownHook(new Thread(appController::stop));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            appController.stop();
+            beepController.stop();
+        }));
     }
 }
