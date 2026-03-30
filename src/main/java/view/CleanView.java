@@ -14,6 +14,7 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import javax.swing.*;
+import javax.swing.JWindow;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -126,7 +127,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         frame = new JFrame("Distance Monitor");
         frame.setSize(1400, 900);
         frame.setMinimumSize(new Dimension(1200, 750));
-        frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout(0, 0));
         frame.add(buildHeader(), BorderLayout.NORTH);
         frame.add(buildBody(),   BorderLayout.CENTER);
@@ -277,6 +278,7 @@ public class CleanView implements DistanceModel.ReadingListener {
                 alertBanner.setBorder(BorderFactory.createMatteBorder(0,0,1,0,CRIT_DOT));
                 alertLabel.setForeground(CRIT_TEXT);
                 alertBanner.setVisible(true);
+                showToast(frame, "⚠ Critical object detected!", CRIT_BG, CRIT_TEXT);
                 break;
             case "WARNING":
                 alertLabel.setText("Object in warning zone — " + fmt(distanceCm));
@@ -757,4 +759,32 @@ public class CleanView implements DistanceModel.ReadingListener {
             g2.dispose();
         }
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // TOAST NOTIFICATION
+    // ══════════════════════════════════════════════════════════════════════
+    public static void showToast(JFrame parent, String message, Color bg, Color fg){
+        JWindow toast = new JWindow(parent);
+        JLabel label = new JLabel(message);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        label.setForeground(fg);
+        label.setBackground(bg);
+        label.setOpaque(true);
+        label.setBorder(BorderFactory.createEmptyBorder(12,20,12,20));
+        toast.add(label);
+        toast.pack();
+
+        // Position bottom-right of parent
+        int x = parent.getX() + parent.getWidth() - toast.getWidth() - 24;
+        int y = parent.getY() + parent.getHeight() - toast.getHeight() - 48;
+        toast.setLocation(x,y);
+        toast.setVisible(true);
+
+        // Auto dismiss after 3 seconds
+        new Timer(3000, e -> {
+            toast.setVisible(false);
+            toast.dispose();
+        }) {{ setRepeats(false); }}.start();
+    }
+
 }

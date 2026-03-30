@@ -5,10 +5,10 @@ import controller.DatabaseController;
 import controller.UserAuth;
 import model.DistanceModel;
 import view.CleanView;
-import view.GraphView;
+//import view.GraphView;
 import view.LoginView;
-import view.MainView;
-import view.RadarView;
+//import view.MainView;
+//import view.RadarView;
 
 /**
  * Entry point — wires Model, Views, and Controllers together.
@@ -56,15 +56,14 @@ public class Main {
         }
 
         // ── 4. Views (register on model) ───────────────────────────────────
-        GraphView graphView = new GraphView();
-        RadarView radarView = new RadarView();
-        MainView  mainView  = new MainView(model, graphView, radarView, userAuth);
+//        GraphView graphView = new GraphView();
+//        RadarView radarView = new RadarView();
+//        MainView  mainView  = new MainView(model, graphView, radarView, userAuth);
         CleanView cleanView = new CleanView(model, userAuth);   // ← protected by login
-
-        model.addListener(graphView);
-        model.addListener(radarView);
-        model.addListener(mainView);
         model.addListener(cleanView);
+//        model.addListener(graphView);
+//        model.addListener(radarView);
+//        model.addListener(mainView);
 
         // ── 5. Controllers ─────────────────────────────────────────────────
         BeepController beepController = new BeepController();
@@ -75,7 +74,7 @@ public class Main {
 
         // ── 6. Show views ──────────────────────────────────────────────────
         javax.swing.SwingUtilities.invokeLater(() -> {
-            mainView.show();
+//            mainView.show();
             cleanView.show();
         });
 
