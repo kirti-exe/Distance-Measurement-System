@@ -2,6 +2,7 @@ package view;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
+import controller.SosController;
 import controller.UserAuth;
 import model.DistanceModel;
 import model.DistanceReading;
@@ -67,6 +68,7 @@ public class CleanView implements DistanceModel.ReadingListener {
     // ── State ──────────────────────────────────────────────────────────────
     private final DistanceModel model;
     private final UserAuth      userAuth;
+    private final SosController sosController;
     private boolean darkMode    = false;
     private int     tick        = 0;
     private long    lastReadingMs = 0;
@@ -86,6 +88,7 @@ public class CleanView implements DistanceModel.ReadingListener {
     private JButton          toggleBtn;
     private JButton          settingsBtn;
     private JButton          darkModeBtn;
+    private JButton          sosBtn;
     private JButton[]        unitBtns;
     private JPanel           tableCard;
     private JButton          collapseBtn;
@@ -94,9 +97,10 @@ public class CleanView implements DistanceModel.ReadingListener {
     // ══════════════════════════════════════════════════════════════════════
     // CONSTRUCTOR
     // ══════════════════════════════════════════════════════════════════════
-    public CleanView(DistanceModel model, UserAuth userAuth) {
+    public CleanView(DistanceModel model, UserAuth userAuth, SosController sosController) {
         this.model    = model;
         this.userAuth = userAuth;
+        this.sosController = sosController;
 
         try { FlatLightLaf.setup(); } catch (Exception ignored) {}
         UIManager.put("defaultFont", new Font("Segoe UI", Font.PLAIN, 16));
@@ -122,6 +126,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         toggleBtn   = buildToggleBtn();
         settingsBtn = buildSettingsBtn();
         darkModeBtn = buildDarkModeBtn();
+        sosBtn      = buildSosBtn();
         unitBtns    = buildUnitBtns();
 
         frame = new JFrame("Distance Monitor");
@@ -136,7 +141,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         new Timer(1000, e -> refreshUpdatedLabel()).start();
     }
 
-    public CleanView(DistanceModel model) { this(model, null); }
+    public CleanView(DistanceModel model) { this(model, null, null); }
 
     public void show() { frame.setVisible(true); }
 
@@ -244,6 +249,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         applyStatusStyle(statusBadge, "SAFE");
         right.add(statusBadge);
         right.add(buildUnitGroup());
+        right.add(sosBtn);
         right.add(darkModeBtn);
         right.add(settingsBtn);
         right.add(toggleBtn);
@@ -565,6 +571,24 @@ public class CleanView implements DistanceModel.ReadingListener {
         btn.addActionListener(e -> {
             toggleDarkMode();
             btn.setText(darkMode ? "Light" : "Dark");
+        });
+        return btn;
+    }
+
+    private JButton buildSosBtn(){
+        JButton btn = new JButton("SOS");
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        btn.setPreferredSize(new Dimension(80,45));
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(CRIT_DOT);
+        btn.setOpaque(true);
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> {
+            if(sosController != null){
+                sosController.sendSOS();
+                showToast(frame, "SOS sent to your phone!", CRIT_BG, CRIT_TEXT);
+            }
         });
         return btn;
     }

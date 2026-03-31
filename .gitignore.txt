@@ -1,3 +1,23 @@
+# IntelliJ IDEA
 .idea/
-out/
 *.iml
+*.iws
+*.ipr
+out/
+
+# Maven
+target/
+*.class
+
+# Credentials
+src/main/java/controller/SosController.java
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Database config
+# src/main/java/model/AppConfig.java
