@@ -31,6 +31,7 @@ public class DatabaseController implements DistanceModel.ReadingListener {
                     AppConfig.DB_PASSWORD
                 );
                 connected = true;
+                sharedInstance = this;
                 System.out.println("✅ MySQL Connected");
             }
         } catch (Exception e) {
@@ -102,5 +103,15 @@ public class DatabaseController implements DistanceModel.ReadingListener {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // ── getSharedConnection ─────────────────────────────────────────────────────────
+    private static DatabaseController sharedInstance;
+
+    public static java.sql.Connection getSharedConnection() {
+        if(sharedInstance != null){
+            return sharedInstance.connection;
+        }
+        return null;
     }
 }

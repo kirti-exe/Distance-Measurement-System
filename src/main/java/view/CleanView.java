@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import controller.SosController;
 import controller.UserAuth;
+import javafx.scene.layout.Border;
 import model.DistanceModel;
 import model.DistanceReading;
 import org.jfree.chart.*;
@@ -423,7 +424,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         tabs.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         tabs.addTab("All Readings",  buildReadingsTable(tableModel));
         tabs.addTab("Alert History", buildReadingsTable(alertTableModel));
-
+        tabs.addTab("Incident Log", buildIncidentLogPanel());
         collapseBtn = new JButton("▾  History");
         collapseBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         collapseBtn.setContentAreaFilled(false);
@@ -466,6 +467,115 @@ public class CleanView implements DistanceModel.ReadingListener {
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(BorderFactory.createEmptyBorder());
         return scroll;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  Incident Log Tab
+    // ══════════════════════════════════════════════════════════════════════
+    private JPanel buildIncidentLogPanel(){
+        JPanel panel = new JPanel(new BorderLayout(0,8));
+        panel.setOpaque(false);
+        panel.setBorder(new EmptyBorder(12,16,12,16));
+
+        // Input area
+        JPanel inputRow = new JPanel(new BorderLayout(8,0));
+        inputRow.setOpaque(false);
+
+        JTextField noteField = new JTextField();
+        noteField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        noteField.setPreferredSize(new Dimension(0,40));
+
+        JButton logBtn = new JButton("Log Incident");
+        logBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        logBtn.setForeground(Color.WHITE);
+        logBtn.setBackground(new Color(0x3B82F6));
+        logBtn.setOpaque(true);
+        logBtn.setFocusPainted(false);
+        logBtn.setPreferredSize(new Dimension(140,40));
+
+        inputRow.add(noteField, BorderLayout.CENTER);
+        inputRow.add(logBtn, BorderLayout.EAST);
+
+        // Log table
+        DefaultTableModel logTableModel = new DefaultTableModel(
+                new String[]{"Timestamp", "Distance", "Status", "Note"}, 0) {
+            public boolean isCellEditable(int r, int c) {return false;}
+        };
+
+        JTable logTable = new JTable(logTableModel);
+        logTable.setFont(new Font("Consolas", Font.PLAIN, 13));
+        logTable.setRowHeight(36);
+        logTable.setShowVerticalLines(false);
+        logTable.setShowHorizontalLines(true);
+        logTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        logTable.getTableHeader().setReorderingAllowed(false);
+        logTable.getColumnModel().getColumn(0).setPreferredWidth(180);
+        logTable.getColumnModel().getColumn(1).setPreferredWidth(90);
+        logTable.getColumnModel().getColumn(2).setPreferredWidth(90);
+        logTable.getColumnModel().getColumn(3).setPreferredWidth(300);
+
+        JScrollPane scroll = new JScrollPane(logTable);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+
+        // Log button action
+        logBtn.addActionListener(e -> {
+            String note = noteField.getText().trim();
+            if(note.isEmpty()){
+                showToast(frame, "Please write a note before logging.", WARN_BG, WARN_TEXT);
+                return;
+            }
+
+            DistanceReading latest = model.getLatestReading();
+            String distance = latest != null ? fmt(latest.getDistance()) : "--";
+            String status = latest != null ? latest.getStatus() : "--";
+            String time = latest != null
+                    ? latest.getFormattedTimestamp()
+                    : new java.util.Date().toString();
+
+            // Add to table
+            logTableModel.insertRow(0, new Object[]{time, distance, status, note});
+
+            // save to mySql
+            saveIncidentLog(latest, note);
+
+            // clear field
+            noteField.setText("");
+            showToast(frame, "Incident logged successfully.", SAFE_BG, SAFE_TEXT);
+        });
+
+        panel.add(inputRow, BorderLayout.NORTH);
+        panel.add(scroll, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void saveIncidentLog(DistanceReading reading, String note){
+        new Thread(() -> {
+            try {
+                java.sql.Connection conn = controller.DatabaseController.getSharedConnection();
+//                System.out.println("Incident log connection: " + conn);
+                if(conn == null){
+                    System.out.println("Connection is null - cannot save incident");
+                    return;
+                }
+
+                // force auto commit on
+                conn.setAutoCommit(true);
+
+                String sql = "INSERT INTO incident_log(distance, status, note) VALUES (?, ?, ?)";
+                java.sql.PreparedStatement stmt = conn.prepareStatement(sql);
+                stmt.setDouble(1, reading != null ? reading.getDistance() : 0);
+                stmt.setString(2, reading != null ? reading.getStatus() : "--");
+                stmt.setString(3, note);
+
+//                System.out.println("Incident saved to DB");
+                int rows = stmt.executeUpdate();
+                System.out.println("Incident rows inserted: " + rows);
+
+            } catch(Exception e){
+                System.out.println("Incident log DB error: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     // ══════════════════════════════════════════════════════════════════════
