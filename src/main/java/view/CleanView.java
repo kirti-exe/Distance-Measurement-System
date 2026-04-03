@@ -16,10 +16,10 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.JWindow;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.util.List;
@@ -544,6 +544,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         });
 
         panel.add(inputRow, BorderLayout.NORTH);
+        loadIncidentLogs(logTableModel);
         panel.add(scroll, BorderLayout.CENTER);
         return panel;
     }
@@ -574,6 +575,39 @@ public class CleanView implements DistanceModel.ReadingListener {
             } catch(Exception e){
                 System.out.println("Incident log DB error: " + e.getMessage());
                 e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private void loadIncidentLogs(javax.swing.table.DefaultTableModel logTableModel) {
+        new Thread(() -> {
+            try{
+                java.sql.Connection conn = controller.DatabaseController.getSharedConnection();
+                if(conn == null) return;
+
+                String sql = "SELECT timestamp, distance, status, note " +
+                        "FROM incident_log ORDER BY timestamp DESC LIMIT 100";
+                java.sql.Statement stmt = conn.createStatement();
+                java.sql.ResultSet rs = stmt.executeQuery(sql);
+
+                while(rs.next()){
+                    String time = rs.getString("timestamp");
+                    double distance = rs.getDouble("distance");
+                    String status = rs.getString("status");
+                    String note = rs.getString("note");
+
+                    SwingUtilities.invokeLater(() ->
+                            logTableModel.addRow(new Object[] {
+                                    time,
+                                    String.format("%.1f cm", distance),
+                                    status,
+                                    note
+                            })
+                    );
+                }
+                System.out.println("Incident logs loaded from DB");
+            } catch (Exception e) {
+                System.out.println("Failed to load incident log." + e.getMessage());
             }
         }).start();
     }
