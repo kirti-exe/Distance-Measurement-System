@@ -18,12 +18,28 @@
             <version>2.10.4</version>
         </dependency>
 
+        <!-- MySQL database connection -->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>5.1.49</version>
         </dependency>
 
+        <!-- Charts and graphs -->
+<!--        <dependency>-->
+<!--            <groupId>org.jfree</groupId>-->
+<!--            <artifactId>jfreechart</artifactId>-->
+<!--            <version>1.5.4</version>-->
+<!--        </dependency>-->
+
+        <!-- Modern UI look and feel -->
+<!--        <dependency>-->
+<!--            <groupId>com.formdev</groupId>-->
+<!--            <artifactId>flatlaf</artifactId>-->
+<!--            <version>3.4</version>-->
+<!--        </dependency>-->
+
+        <!-- Email / SOS alerts -->
 <!--        <dependency>-->
 <!--            <groupId>com.sun.mail</groupId>-->
 <!--            <artifactId>javax.mail</artifactId>-->
