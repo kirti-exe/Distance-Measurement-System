@@ -4,10 +4,11 @@ import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import controller.SosController;
 import controller.UserAuth;
-import javafx.scene.layout.Border;
 import model.DistanceModel;
 import model.DistanceReading;
-import org.jfree.chart.*;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYAreaRenderer;
@@ -16,10 +17,9 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.JWindow;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.util.List;
@@ -75,25 +75,30 @@ public class CleanView implements DistanceModel.ReadingListener {
     private long    lastReadingMs = 0;
 
     // ── Components ─────────────────────────────────────────────────────────
-    private JFrame           frame;
-    private RadialGaugePanel gaugePanel;
-    private JLabel           statusBadge;
-    private JPanel           alertBanner;
-    private JLabel           alertLabel;
-    private JLabel           avgLabel, minLabel, maxLabel, samplesLabel;
-    private JLabel           updatedLabel;
-    private DefaultTableModel tableModel;
-    private DefaultTableModel alertTableModel;
-    private final XYSeries   series = new XYSeries("Distance");
-    private ChartPanel       chartPanel;
-    private JButton          toggleBtn;
-    private JButton          settingsBtn;
-    private JButton          darkModeBtn;
-    private JButton          sosBtn;
-    private JButton[]        unitBtns;
-    private JPanel           tableCard;
-    private JButton          collapseBtn;
-    private boolean          tableVisible = true;
+    private final JFrame           frame;
+    private final RadialGaugePanel gaugePanel;
+    private final JLabel           statusBadge;
+    private final JPanel           alertBanner;
+    private final JLabel           alertLabel;
+    private final JLabel           avgLabel;
+    private final JLabel           minLabel;
+    private final JLabel           maxLabel;
+    private final JLabel           samplesLabel;
+    private final JLabel           updatedLabel;
+    private final DefaultTableModel tableModel;
+    private final DefaultTableModel alertTableModel;
+    private final XYSeries         series = new XYSeries("Distance");
+    private final ChartPanel       chartPanel;
+    private final JButton          toggleBtn;
+    private final JButton          settingsBtn;
+    private final JButton          darkModeBtn;
+    private final JButton          sosBtn;
+    private final JButton          fullscreenBtn;
+    private boolean                isFullscreen = false;
+    private final JButton[]        unitBtns;
+    private JPanel                 tableCard;
+    private JButton                collapseBtn;
+    private boolean                tableVisible = true;
 
     // ══════════════════════════════════════════════════════════════════════
     // CONSTRUCTOR
@@ -129,6 +134,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         darkModeBtn = buildDarkModeBtn();
         sosBtn      = buildSosBtn();
         unitBtns    = buildUnitBtns();
+        fullscreenBtn = buildFullscreenBtn();
 
         frame = new JFrame("Distance Monitor");
         frame.setSize(1400, 900);
@@ -137,9 +143,18 @@ public class CleanView implements DistanceModel.ReadingListener {
         frame.setLayout(new BorderLayout(0, 0));
         frame.add(buildHeader(), BorderLayout.NORTH);
         frame.add(buildBody(),   BorderLayout.CENTER);
+        frame.add(buildStatusBar(), BorderLayout.SOUTH);
         frame.setLocation(120, 80);
 
         new Timer(1000, e -> refreshUpdatedLabel()).start();
+
+        // F11 fullscreen toggle
+        frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("F11"), "fullscreen");
+        frame.getRootPane().getActionMap().put("fullscreen", new AbstractAction() {
+            public void actionPerformed(java.awt.event.ActionEvent e){
+                toggleFullscreen();
+            }
+        });
     }
 
     public CleanView(DistanceModel model) { this(model, null, null); }
@@ -250,6 +265,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         applyStatusStyle(statusBadge, "SAFE");
         right.add(statusBadge);
         right.add(buildUnitGroup());
+        right.add(fullscreenBtn);
         right.add(sosBtn);
         right.add(darkModeBtn);
         right.add(settingsBtn);
@@ -299,9 +315,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
     // BODY
-    // ══════════════════════════════════════════════════════════════════════
     private JPanel buildBody() {
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
@@ -325,6 +339,66 @@ public class CleanView implements DistanceModel.ReadingListener {
 
         wrapper.add(body, BorderLayout.CENTER);
         return wrapper;
+    }
+
+    private JPanel buildStatusBar() {
+        JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT,16,6));
+        bar.setBorder(BorderFactory.createMatteBorder(1,0,0,0,
+                UIManager.getColor("Separator.foreground") != null
+                            ? UIManager.getColor("Separator.foreground")
+                            : new Color(0xE2E8F0)));
+
+        // MySQL status
+        JLabel mysqlDot = new JLabel("●");
+        mysqlDot.setFont(new Font("Segoe UI", Font.PLAIN,11));
+        JLabel mysqlLabel = new JLabel("MySQL");
+        mysqlLabel.setFont(new Font("Segoe UI", Font.PLAIN,11));
+
+        // Arduino / Sensor status
+        JLabel arduinoDot = new JLabel("●");
+        arduinoDot.setFont(new Font("Segoe UI", Font.PLAIN,11));
+        JLabel arduinoLabel = new JLabel("Sensor");
+        arduinoLabel.setFont(new Font("Segoe UI", Font.PLAIN,11));
+
+        // Version label
+        JLabel version = new JLabel("v1.0.0");
+        version.setFont(new Font("Segoe UI", Font.PLAIN,10));
+        version.setForeground(new Color(0x94A3B8));
+
+        bar.add(mysqlDot);
+        bar.add(mysqlLabel);
+        bar.add(new JSeparator(JSeparator.VERTICAL) {{
+            setPreferredSize(new Dimension(1,14));
+        }});
+        bar.add(arduinoDot);
+        bar.add(arduinoLabel);
+        bar.add(Box.createHorizontalStrut(8));
+        bar.add(version);
+
+        // Live status checker - runs every 2 seconds
+        new Timer(2000, e-> {
+            // MySQL check
+            java.sql.Connection conn =
+                    controller.DatabaseController.getSharedConnection();
+            boolean mysqlOk = conn != null;
+            try {
+                if (conn != null) mysqlOk = !conn.isClosed();
+            }catch (Exception ex) {
+                mysqlOk = false;
+            }
+            mysqlDot.setForeground(mysqlOk ? SAFE_DOT : CRIT_DOT);
+            mysqlLabel.setText("MySQL: " + (mysqlOk ? "Connected" : "Disconnected"));
+
+            // Sensor check - if model has reading in last 5 seconds
+            boolean sensorOk = (System.currentTimeMillis() - lastReadingMs) < 5000
+                    && lastReadingMs > 0;
+            arduinoDot.setForeground(sensorOk ? SAFE_DOT :
+                    model.isMonitoring() ? WARN_DOT : new Color(0x94A3B8));
+            arduinoLabel.setText("Sensor: " +
+                    (sensorOk ? "Active" : model.isMonitoring() ? "Waiting..." : "Stopped"));
+        }).start();
+
+        return bar;
     }
 
     // ── Left column ────────────────────────────────────────────────────────
@@ -735,6 +809,35 @@ public class CleanView implements DistanceModel.ReadingListener {
             }
         });
         return btn;
+    }
+
+    private JButton buildFullscreenBtn() {
+        JButton btn = new JButton("⛶");
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        btn.setPreferredSize(new Dimension(50,45));
+        btn.setFocusPainted(false);
+        btn.setToolTipText("Fullscreen (F11)");
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> toggleFullscreen());
+        return btn;
+    }
+
+    private void toggleFullscreen(){
+        GraphicsDevice device = GraphicsEnvironment
+                .getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice();
+
+        if (!isFullscreen) {
+            device.setFullScreenWindow(frame);
+            isFullscreen = true;
+            fullscreenBtn.setText("✕");
+            fullscreenBtn.setToolTipText("Exit fullscreen (F11");
+        } else {
+            device.setFullScreenWindow(null);
+            isFullscreen = false;
+            fullscreenBtn.setText("⛶");
+            fullscreenBtn.setToolTipText("Fullscreen (F11)");
+        }
     }
 
     private JButton[] buildUnitBtns() {

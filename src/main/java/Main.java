@@ -1,25 +1,10 @@
 import com.formdev.flatlaf.FlatLightLaf;
-import controller.AppController;
-import controller.BeepController;
-import controller.DatabaseController;
-import controller.UserAuth;
-import controller.SosController;
+import controller.*;
 import model.DistanceModel;
 import view.CleanView;
 import view.LoginView;
+import view.SplashScreen;
 
-/**
- * Entry point — wires Model, Views, and Controllers together.
- *
- * MVC wiring order:
- *  1. Create the Model
- *  2. Connect to DB
- *  3. Show LoginView — gate CleanView behind authentication
- *  4. Create all Views (register as listeners on the Model)
- *  5. Create Controllers (given the Model to drive)
- *  6. Show Views
- *  7. Start Controllers
- */
 public class Main {
 
     public static void main(String[] args) {
@@ -31,8 +16,21 @@ public class Main {
         DatabaseController dbController = new DatabaseController();
         dbController.connect();
 
-        // ── 3. Login gate for CleanView ────────────────────────────────────
-        //   LoginView is shown on the EDT; we block here until it closes.
+        // 2.5. Splash Screen
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            try { FlatLightLaf.setup(); } catch (Exception ignored) {}
+            SplashScreen splash = new SplashScreen() {
+                @Override
+                protected void onSplashFinished() {
+                    // Run startApp on a background thread — NOT the EDT
+                    new Thread(() -> startApp(model, dbController), "StartupThread").start();
+                }
+            };
+            splash.showAndWait();
+        });
+    }
+
+    private static void startApp(DistanceModel model, DatabaseController dbController) {
         UserAuth userAuth = new UserAuth(dbController);
         final boolean[] loginOk = {false};
 
@@ -47,37 +45,26 @@ public class Main {
         }
 
         if (!loginOk[0]) {
-            // User closed the dialog without signing in — shut down cleanly
             System.out.println("Login cancelled. Exiting.");
             dbController.disconnect();
             System.exit(0);
         }
 
-        // Pseudo 5. Controller
         SosController sosController = new SosController(model);
-
-        // ── 4. Views (register on model) ───────────────────────────────────
-        CleanView cleanView = new CleanView(model, userAuth, sosController);   // ← protected by login
+        CleanView cleanView = new CleanView(model, userAuth, sosController);
         model.addListener(cleanView);
 
-        // ── 5. Controllers ─────────────────────────────────────────────────
         BeepController beepController = new BeepController();
-
         model.addListener(dbController);
         model.addListener(beepController);
 
         AppController appController = new AppController(model, dbController);
 
-        // ── 6. Show views ──────────────────────────────────────────────────
-        javax.swing.SwingUtilities.invokeLater(() -> {
-            cleanView.show();
-        });
+        javax.swing.SwingUtilities.invokeLater(cleanView::show);
 
-        // ── 7. Start sensor loop ───────────────────────────────────────────
         appController.start();
         beepController.start();
 
-        // Graceful shutdown on exit
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             appController.stop();
             beepController.stop();
