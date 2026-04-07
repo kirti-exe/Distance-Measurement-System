@@ -84,6 +84,7 @@ public class CleanView implements DistanceModel.ReadingListener {
     private final JLabel           minLabel;
     private final JLabel           maxLabel;
     private final JLabel           samplesLabel;
+    private final JLabel           stdDevLabel, uptimeLabel, criticalCountLabel;
     private final JLabel           updatedLabel;
     private final DefaultTableModel tableModel;
     private final DefaultTableModel alertTableModel;
@@ -99,6 +100,9 @@ public class CleanView implements DistanceModel.ReadingListener {
     private JPanel                 tableCard;
     private JButton                collapseBtn;
     private boolean                tableVisible = true;
+
+    private long sessionStartMs = System.currentTimeMillis();
+    private int  totalReadings  = 0;
 
     // ══════════════════════════════════════════════════════════════════════
     // CONSTRUCTOR
@@ -119,6 +123,9 @@ public class CleanView implements DistanceModel.ReadingListener {
         minLabel        = monoLabel("--");
         maxLabel        = monoLabel("--");
         samplesLabel    = monoLabel("0");
+        stdDevLabel     = monoLabel("--");
+        uptimeLabel     = monoLabel("--");
+        criticalCountLabel = monoLabel("0");
         updatedLabel    = new JLabel("No data yet");
         tableModel      = new DefaultTableModel(
                 new String[]{"Timestamp", "Distance", "Status"}, 0) {
@@ -186,6 +193,18 @@ public class CleanView implements DistanceModel.ReadingListener {
         minLabel.setText(fmt(model.getMin()));
         maxLabel.setText(fmt(model.getMax()));
         samplesLabel.setText(String.valueOf(model.getSampleCount()));
+
+        // Std deviation
+        stdDevLabel.setText(String.format("%.1f cm", model.getStdDeviation()));
+
+        // Uptime
+        long uptimeSecs = (System.currentTimeMillis() - sessionStartMs) / 1000;
+        long mins = uptimeSecs / 60;
+        long secs = uptimeSecs % 60;
+        uptimeLabel.setText(String.format("%dm %ds", mins, secs));
+
+        // Critical count
+        criticalCountLabel.setText(String.valueOf(model.getCCriticalCount()));
 
         tableModel.insertRow(0, new Object[]{
                 reading.getFormattedTimestamp(), distStr, reading.getStatus()});
@@ -421,11 +440,15 @@ public class CleanView implements DistanceModel.ReadingListener {
         col.add(Box.createVerticalStrut(12));
 
         JPanel statsCard = card();
-        statsCard.setLayout(new GridLayout(4, 1, 0, 0));
+        statsCard.setLayout(new GridLayout(7, 1, 0, 0));
         addStatRow(statsCard, "Average", avgLabel,    true);
         addStatRow(statsCard, "Minimum", minLabel,    true);
         addStatRow(statsCard, "Maximum", maxLabel,    true);
+        addStatRow(statsCard, "Std Dev", stdDevLabel,  true);
+        addStatRow(statsCard, "Uptime", uptimeLabel,  true);
+        addStatRow(statsCard, "Critical", criticalCountLabel,  true);
         addStatRow(statsCard, "Samples", samplesLabel, false);
+
         col.add(statsCard);
         return col;
     }

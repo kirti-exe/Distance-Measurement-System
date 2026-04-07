@@ -95,6 +95,25 @@ public class DistanceModel {
         return history.stream().mapToDouble(DistanceReading::getDistance).max().orElse(0);
     }
 
+    public double getStdDeviation() {
+        if(history.size() < 2) return 0;
+        double avg = getAverage();
+        double sum = 0;
+        for(DistanceReading r : history){
+            double diff = r.getDistance() - avg;
+            sum += diff * diff;
+        }
+        return Math.sqrt(sum / history.size());
+    }
+
+    public int getCCriticalCount(){
+        int count = 0;
+        for(DistanceReading r : history){
+            if("CRITICAL".equals(r.getStatus())) count++ ;
+        }
+        return count;
+    }
+
     public int getSampleCount() {
         return history.size();
     }
