@@ -6,7 +6,7 @@ import model.DistanceModel;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.UIManager;
 import java.awt.*;
 import java.util.List;
 
@@ -18,11 +18,6 @@ import java.util.List;
 public class SettingsView extends JDialog {
 
     // ── Palette ────────────────────────────────────────────────────────────
-    private static final Color BG            = new Color(0xF8FAFC);
-    private static final Color SURFACE       = Color.WHITE;
-    private static final Color BORDER        = new Color(0xE2E8F0);
-    private static final Color TEXT_MAIN     = new Color(0x0F172A);
-
     private static final Color ACCENT        = new Color(0x3B82F6);
     private static final Color DANGER        = new Color(0xE11D48);
 
@@ -55,7 +50,7 @@ public class SettingsView extends JDialog {
         setSize(460, 500);
         setResizable(false);
         setLocationRelativeTo(getParent());
-        getContentPane().setBackground(SURFACE);
+        getContentPane().setBackground(UIManager.getColor("Panel.background"));
         setLayout(new BorderLayout());
 
         JTabbedPane tabs = new JTabbedPane();
@@ -70,10 +65,10 @@ public class SettingsView extends JDialog {
     // ----------------------------------------------------------------------
     private JPanel buildThresholdsTab() {
         JPanel outer = new JPanel(new BorderLayout());
-        outer.setBackground(SURFACE);
+        outer.setOpaque(false);
 
         JPanel form = new JPanel(new GridBagLayout());
-        form.setBackground(SURFACE);
+        form.setOpaque(false);
         form.setBorder(new EmptyBorder(24, 28, 16, 28));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -84,7 +79,7 @@ public class SettingsView extends JDialog {
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 4;
         JLabel threshTitle = new JLabel("Detection Thresholds");
         threshTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        threshTitle.setForeground(TEXT_MAIN);
+//        threshTitle.setForeground(TEXT_MAIN);
         form.add(threshTitle, gbc);
 
         gbc.gridwidth = 1;
@@ -120,7 +115,7 @@ public class SettingsView extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1;
         gbc.insets = new Insets(14, 8, 14, 8);
         JSeparator sep = new JSeparator();
-        sep.setForeground(BORDER);
+//        sep.setForeground(BORDER);
         form.add(sep, gbc);
         gbc.insets = new Insets(10, 8, 10, 8);
         gbc.gridwidth = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
@@ -132,8 +127,11 @@ public class SettingsView extends JDialog {
 
     private JPanel buildThresholdButtons() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 12));
-        panel.setBackground(BG);
-        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER));
+        panel.setOpaque(false);
+        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0,
+                UIManager.getColor("Separator.foreground") != null
+                ? UIManager.getColor("Separator.foreground")
+                : new Color(0xE2E8F0)));
 
         JButton cancelBtn = new JButton("Cancel");
         cancelBtn.setFont(new Font("Segoe UI", Font.PLAIN, 13));

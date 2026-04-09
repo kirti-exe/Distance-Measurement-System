@@ -109,10 +109,11 @@ public class CleanView implements DistanceModel.ReadingListener {
     // ══════════════════════════════════════════════════════════════════════
     public CleanView(DistanceModel model, UserAuth userAuth, SosController sosController) {
         this.model    = model;
+        this.darkMode = loadThemePreference();
         this.userAuth = userAuth;
         this.sosController = sosController;
 
-        try { FlatLightLaf.setup(); } catch (Exception ignored) {}
+//        try { FlatLightLaf.setup(); } catch (Exception ignored) {}
         UIManager.put("defaultFont", new Font("Segoe UI", Font.PLAIN, 16));
 
         gaugePanel      = new RadialGaugePanel();
@@ -231,6 +232,7 @@ public class CleanView implements DistanceModel.ReadingListener {
     // ══════════════════════════════════════════════════════════════════════
     private void toggleDarkMode() {
         darkMode = !darkMode;
+        saveThemePreference(darkMode);
         try {
             if (darkMode) FlatDarkLaf.setup();
             else          FlatLightLaf.setup();
@@ -441,6 +443,7 @@ public class CleanView implements DistanceModel.ReadingListener {
 
         JPanel statsCard = card();
         statsCard.setLayout(new GridLayout(7, 1, 0, 0));
+        statsCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
         addStatRow(statsCard, "Average", avgLabel,    true);
         addStatRow(statsCard, "Minimum", minLabel,    true);
         addStatRow(statsCard, "Maximum", maxLabel,    true);
@@ -456,12 +459,12 @@ public class CleanView implements DistanceModel.ReadingListener {
     private void addStatRow(JPanel card, String name, JLabel valueLabel, boolean divider) {
         JPanel row = new JPanel(new BorderLayout());
         row.setOpaque(false);
-        row.setBorder(new EmptyBorder(12, 16, 12, 16));
+        row.setBorder(new EmptyBorder(5, 16, 5, 16));
 
         JLabel lbl = new JLabel(name);
-        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 
-        valueLabel.setFont(new Font("Consolas", Font.BOLD, 20));
+        valueLabel.setFont(new Font("Consolas", Font.BOLD, 13));
 
         row.add(lbl,        BorderLayout.WEST);
         row.add(valueLabel, BorderLayout.EAST);
@@ -803,7 +806,7 @@ public class CleanView implements DistanceModel.ReadingListener {
     }
 
     private JButton buildDarkModeBtn() {
-        JButton btn = new JButton("Dark");
+        JButton btn = new JButton(darkMode ? "Light" : "Dark");
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         btn.setPreferredSize(new Dimension(80, 45));
         btn.setFocusPainted(false);
@@ -1081,4 +1084,28 @@ public class CleanView implements DistanceModel.ReadingListener {
         }) {{ setRepeats(false); }}.start();
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // THEME PERSISTENCE
+    // ══════════════════════════════════════════════════════════════════════
+    private static final String THEME_FILE = "theme.properties";
+
+    private static void saveThemePreference(boolean dark){
+        try{
+            java.util.Properties props = new java.util.Properties();
+            props.setProperty("darkMode", String.valueOf(dark));
+            props.store(new java.io.FileOutputStream(THEME_FILE), null);
+        }catch(Exception e){
+            System.out.println("Could not save theme: " + e.getMessage());
+        }
+    }
+
+    public static boolean loadThemePreference() {
+        try{
+            java.util.Properties props = new java.util.Properties();
+            props.load(new java.io.FileInputStream(THEME_FILE));
+            return Boolean.parseBoolean(props.getProperty("darkMode", "false"));
+        }catch(Exception e){
+            return false; // default to light
+        }
+    }
 }

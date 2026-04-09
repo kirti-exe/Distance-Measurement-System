@@ -9,6 +9,13 @@ public class Main {
 
     public static void main(String[] args) {
 
+        // Apply saved theme before ay UI is created
+        boolean savedDark = view.CleanView.loadThemePreference();
+        try {
+            if (savedDark) com.formdev.flatlaf.FlatDarkLaf.setup();
+            else           com.formdev.flatlaf.FlatLightLaf.setup();
+        } catch (Exception ignored) {}
+
         // ── 1. Model ───────────────────────────────────────────────────────
         DistanceModel model = new DistanceModel();
 
@@ -18,7 +25,7 @@ public class Main {
 
         // 2.5. Splash Screen
         javax.swing.SwingUtilities.invokeLater(() -> {
-            try { FlatLightLaf.setup(); } catch (Exception ignored) {}
+//            try { FlatLightLaf.setup(); } catch (Exception ignored) {}
             SplashScreen splash = new SplashScreen() {
                 @Override
                 protected void onSplashFinished() {
@@ -36,7 +43,7 @@ public class Main {
 
         try {
             javax.swing.SwingUtilities.invokeAndWait(() -> {
-                try { FlatLightLaf.setup(); } catch (Exception ignored) {}
+//                try { FlatLightLaf.setup(); } catch (Exception ignored) {}
                 LoginView login = new LoginView(userAuth);
                 loginOk[0] = login.showAndWait();
             });
