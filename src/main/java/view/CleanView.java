@@ -6,6 +6,7 @@ import controller.SosController;
 import controller.UserAuth;
 import model.DistanceModel;
 import model.DistanceReading;
+import model.AppConfig;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -77,6 +78,7 @@ public class CleanView implements DistanceModel.ReadingListener {
     // ── Components ─────────────────────────────────────────────────────────
     private final JFrame           frame;
     private final RadialGaugePanel gaugePanel;
+    private final MinimalRadar     radarMini;
     private final JLabel           statusBadge;
     private final JPanel           alertBanner;
     private final JLabel           alertLabel;
@@ -117,6 +119,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         UIManager.put("defaultFont", new Font("Segoe UI", Font.PLAIN, 16));
 
         gaugePanel      = new RadialGaugePanel();
+        radarMini       = new MinimalRadar();
         statusBadge     = new JLabel("● SAFE");
         alertBanner     = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 8));
         alertLabel      = new JLabel("");
@@ -185,6 +188,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         if (series.getItemCount() > 40) series.remove(0);
 
         gaugePanel.setValue(reading.getDistance(), unitLabel(), convert(reading.getDistance()));
+        radarMini.setDistance(reading.getDistance());
         applyStatusStyle(statusBadge, reading.getStatus());
         updateAlertBanner(reading.getStatus(), reading.getDistance());
         updateChartColor(reading.getStatus());
@@ -384,7 +388,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         // Version label
         JLabel version = new JLabel("v1.0.0");
         version.setFont(new Font("Segoe UI", Font.PLAIN,10));
-        version.setForeground(new Color(0x94A3B8));
+        version.setForeground(UIManager.getColor("Label.disableForeground"));
 
         bar.add(mysqlDot);
         bar.add(mysqlLabel);
@@ -436,8 +440,17 @@ public class CleanView implements DistanceModel.ReadingListener {
         gt.setAlignmentX(Component.CENTER_ALIGNMENT);
         gt.setBorder(new EmptyBorder(0, 0, 10, 0));
         gaugeCard.add(gt);
+//        gaugePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+//        gaugeCard.add(gaugePanel);
+//        col.add(gaugeCard);
+        JPanel gaugeRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 0));
+        gaugeRow.setOpaque(false);
         gaugePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        gaugeCard.add(gaugePanel);
+        radarMini.setAlignmentX(Component.CENTER_ALIGNMENT);
+        gaugeRow.add(gaugePanel);
+        gaugeRow.add(radarMini);
+        gaugeRow.setAlignmentX(Component.CENTER_ALIGNMENT);
+        gaugeCard.add(gaugeRow);
         col.add(gaugeCard);
         col.add(Box.createVerticalStrut(12));
 
@@ -587,8 +600,8 @@ public class CleanView implements DistanceModel.ReadingListener {
 
         JButton logBtn = new JButton("Log Incident");
         logBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        logBtn.setForeground(Color.WHITE);
-        logBtn.setBackground(new Color(0x3B82F6));
+        logBtn.setForeground(UIManager.getColor("Button.foreground"));
+        logBtn.setBackground(UIManager.getColor("Button.background"));
         logBtn.setOpaque(true);
         logBtn.setFocusPainted(false);
         logBtn.setPreferredSize(new Dimension(140,40));
@@ -726,7 +739,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         plot.setBackgroundPaint(UIManager.getColor("Panel.background"));
         plot.setOutlineVisible(false);
         plot.setDomainGridlinesVisible(false);
-        plot.setRangeGridlinePaint(new Color(0xE2E8F0));
+        plot.setRangeGridlinePaint(UIManager.getColor("Separator.foreground"));
         plot.setRangeGridlineStroke(new BasicStroke(1f, BasicStroke.CAP_ROUND,
                 BasicStroke.JOIN_ROUND, 1f, new float[]{4, 4}, 0));
         plot.setRangeGridlinesVisible(true);
@@ -823,7 +836,7 @@ public class CleanView implements DistanceModel.ReadingListener {
         JButton btn = new JButton("SOS");
         btn.setFont(new Font("Segoe UI", Font.BOLD, 16));
         btn.setPreferredSize(new Dimension(80,45));
-        btn.setForeground(Color.WHITE);
+        btn.setForeground(UIManager.getColor("Button.foreground"));
         btn.setBackground(CRIT_DOT);
         btn.setOpaque(true);
         btn.setFocusPainted(false);
@@ -901,8 +914,8 @@ public class CleanView implements DistanceModel.ReadingListener {
 
     private void styleUnitBtn(JButton btn, boolean active) {
         if (active) {
-            btn.setBackground(new Color(0x3B82F6));
-            btn.setForeground(Color.WHITE);
+            btn.setBackground(UIManager.getColor("Button.background"));
+            btn.setForeground(UIManager.getColor("Button.foreground"));
             btn.setOpaque(true);
             btn.setContentAreaFilled(true);
         } else {
@@ -1106,6 +1119,115 @@ public class CleanView implements DistanceModel.ReadingListener {
             return Boolean.parseBoolean(props.getProperty("darkMode", "false"));
         }catch(Exception e){
             return false; // default to light
+        }
+    }
+
+    //
+    // MINIMAL RADAR
+    //
+    static class MinimalRadar extends JPanel {
+        private double target = 100;
+        private double animated = 100;
+        private final Timer anim;
+        private int sweepAngle = 0;
+
+        MinimalRadar() {
+            setPreferredSize(new Dimension(160,160));
+            setOpaque(false);
+            anim = new Timer(16, e -> {
+                animated += (target - animated) * 0.08;
+                sweepAngle = (sweepAngle + 2) % 360;
+                repaint();
+            });
+            anim.start();
+        }
+
+        void setDistance(double cm){
+            this.target = cm;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g){
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int w = getWidth(), h = getHeight();
+            int cx = w/2, cy = h/2;
+            int maxR = Math.min(cx, cy) - 10;
+
+            // ── Background rings ───────────────────────────────────────────
+            Color ringColor = UIManager.getColor("Separator.foreground");
+            if(ringColor == null) ringColor = new Color(0xE2EF0);
+
+            g2.setStroke(new BasicStroke(0.8f));
+            for(int i=1; i<=3; i++){
+                int r = maxR * i/3;
+                g2.setColor(new Color(ringColor.getRed(),
+                        ringColor.getGreen(), ringColor.getBlue(), 180));
+                g2.drawOval(cx-r, cy-r, r*2, r*2);
+            }
+
+            // ── Cross lines ────────────────────────────────────────────────
+            g2.setColor(new Color(ringColor.getRed(),
+                    ringColor.getGreen(), ringColor.getBlue(), 100));
+            g2.drawLine(cx, cy-maxR, cx, cy+maxR);
+            g2.drawLine(cx - maxR, cy, cx+ maxR, cy);
+
+            // ── Sweep lines ────────────────────────────────────────────────
+            double sweepRad = Math.toRadians(sweepAngle);
+            Color sweepColor = new Color (0x22C55E);
+            for(int i=0; i<45; i++){
+                double a = Math.toRadians(sweepAngle - i);
+                float alpha = (45 - i) / 45f * 0.5f;
+                g2.setColor(new Color(34/255f, 197/255f, 94/255f, alpha));
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.drawLine(cx, cy,
+                        cx + (int) (maxR * Math.cos(a)),
+                        cy + (int)(maxR * Math.sin(a)));
+            }
+
+            // ── Object dot - position based on distance ────────────────────────────────────────────────
+            double pct = Math.min(animated / 100.0, 1.0);
+            int dotR = (int)(pct * maxR);
+
+            // Place dot at the sweep line angle
+            int dotX = cx + (int)(dotR * Math.cos(sweepRad));
+            int dotY = cy + (int)(dotR * Math.sin(sweepRad));
+
+            // Dot color based in distance
+            Color  dotColor;
+            if(animated < AppConfig.CRITICAL_THRESHOLD)
+                dotColor = CRIT_DOT;
+            else if(animated < AppConfig.WARNING_THRESHOLD)
+                dotColor = WARN_DOT;
+            else
+                dotColor = SAFE_DOT;
+
+            // Glow effect - large faded circle behind dot
+            g2.setColor(new Color(dotColor.getRed(),
+                    dotColor.getGreen(), dotColor.getBlue(), 60));
+            g2.fillOval(dotX - 8, dotY - 8, 16, 16);
+
+            // Main dot
+            g2.setColor(dotColor);
+            g2.fillOval(dotX - 4, dotY - 4, 8, 8);
+
+            // ── Center dot ────────────────────────────────────────────────
+            g2.setColor(sweepColor);
+            g2.fillOval(cx - 3, cy - 3, 6, 6);
+
+            // ── Distance Label ────────────────────────────────────────────────
+            Color fg = UIManager.getColor("Label.foreground");
+            g2.setColor(fg != null ? fg : Color.BLACK);
+            g2.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+            FontMetrics fm = g2.getFontMetrics();
+            String lbl = String.format("%.0f cm", animated);
+            g2.drawString(lbl, cx - fm.stringWidth(lbl) / 2, h -2);
+
+            g2.dispose();
+
         }
     }
 }
