@@ -538,6 +538,10 @@ public class CleanView implements DistanceModel.ReadingListener {
         tabs.addTab("All Readings",  buildReadingsTable(tableModel));
         tabs.addTab("Alert History", buildReadingsTable(alertTableModel));
         tabs.addTab("Incident Log", buildIncidentLogPanel());
+        tabs.addTab("👤 Profile",
+                new ProfileView(userAuth != null
+                        ? userAuth.getLoggedInUsername()
+                        : "guest"));
         collapseBtn = new JButton("▾  History");
         collapseBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         collapseBtn.setContentAreaFilled(false);

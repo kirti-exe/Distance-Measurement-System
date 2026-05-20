@@ -26,10 +26,12 @@ public class UserAuth {
         try {
             Connection conn = dbController.getConnection();
             PreparedStatement stmt = conn.prepareStatement(
-                "SELECT 1 FROM users WHERE username = ? AND password = ? LIMIT 1");
+                    "SELECT 1 FROM users WHERE username = ? AND password = ? LIMIT 1");
             stmt.setString(1, username);
             stmt.setString(2, sha256(password));
-            return stmt.executeQuery().next();
+            boolean ok = stmt.executeQuery().next();
+            if (ok) setLoggedInUsername(username); // ← add this line
+            return ok;
         } catch (Exception e) {
             System.out.println("Auth error: " + e.getMessage());
             return false;
@@ -100,5 +102,15 @@ public class UserAuth {
         } catch (Exception e) {
             throw new RuntimeException("SHA-256 unavailable", e);
         }
+    }
+
+    private String loggedInUsername;
+
+    public void setLoggedInUsername(String username) {
+        this.loggedInUsername = username;
+    }
+
+    public String getLoggedInUsername() {
+        return loggedInUsername;
     }
 }
